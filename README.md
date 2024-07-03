@@ -19,3 +19,11 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/nats_test_iex>.
 
+
+## start nats dockered
+
+`docker run -p 4222:4222 nats -js`
+
+## Trigger message
+
+`Gnat.pub(:gnat, "greetings", "Hello World")`
