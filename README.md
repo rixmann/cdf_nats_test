@@ -24,6 +24,13 @@ be found at <https://hexdocs.pm/nats_test_iex>.
 
 `docker run -p 4222:4222 nats -js`
 
-## Trigger message
+## perform test
 
-`Gnat.pub(:gnat, "greetings", "Hello World")`
+```elixir
+$ iex -S mix run
+iex(1)> NatsTestIex.QueueSupervisor.start_subscribers(3)
+[ok: #PID<0.261.0>, ok: #PID<0.262.0>, ok: #PID<0.263.0>]
+
+iex(2)> for i <- 1..1, do: Gnat.pub(:gnat, "greetings", "Hello World #{i}")
+[:ok]
+```

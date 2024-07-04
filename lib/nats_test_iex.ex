@@ -18,9 +18,10 @@ defmodule NatsTestIex do
            %{host: "localhost", port: 4222}
          ]
        }},
-      NatsTestIex.LoggerPullConsumer
+      NatsTestIex.QueueSupervisor
     ]
     res = Supervisor.start_link(children, strategy: :one_for_one)
+    :timer.sleep(100)
     hello()
     res
   end
@@ -35,7 +36,7 @@ defmodule NatsTestIex do
 
   """
   def hello do
-    stream = %Stream{name: "HELLO", subjects: ["greetings"]}
+    stream = %Stream{name: "HELLO", subjects: ["greetings"], retention: :workqueue}
     {:ok, _response} = Stream.create(:gnat, stream)
     consumer = %Consumer{stream_name: "HELLO", durable_name: "HELLO", ack_wait: 5_000_000_000, max_deliver: 10}
     {:ok, _response} = Consumer.create(:gnat, consumer)
