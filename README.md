@@ -31,6 +31,10 @@ $ iex -S mix run
 iex(1)> NatsTestIex.QueueSupervisor.start_subscribers(3)
 [ok: #PID<0.261.0>, ok: #PID<0.262.0>, ok: #PID<0.263.0>]
 
-iex(2)> for i <- 1..1, do: Gnat.pub(:gnat, "greetings", "Hello World #{i}")
+iex(2)> for i <- 1..1, do: Gnat.pub(:gnat, "greetings.#{UUID.uuid4()}", "Hello World #{i}")
 [:ok]
+Pull Consumer 3 got message: Hello World 1 on topic greetings.253751ef-6332-4e59-9b45-638c9e38f290
+
+iex(3)> NatsTestIex.search_in_archive("253751ef-6332-4e59-9b45-638c9e38f290")
+Found event for id 253751ef-6332-4e59-9b45-638c9e38f290 got message: Hello World 1 on topic greetings.253751ef-6332-4e59-9b45-638c9e38f290
 ```
