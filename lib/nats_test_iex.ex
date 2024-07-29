@@ -30,25 +30,44 @@ defmodule NatsTestIex do
   Setup NATS for our usecase.
   """
   def create_stream_consumer do
-    stream = %Stream{name: "HELLO", subjects: ["greetings.*"], retention: :limits, discard: :old, max_bytes: 1024}
+    stream = %Stream{name: "HELLO", subjects: ["greetings.*.*"], retention: :limits, discard: :old, max_bytes: 524288000}
     {:ok, _response} = Stream.create(:gnat, stream)
     consumer = %Consumer{stream_name: "HELLO", durable_name: "HELLO", ack_wait: 5_000_000_000, max_deliver: 200}
     {:ok, _response} = Consumer.create(:gnat, consumer)
   end
 
-  def search_in_archive(id) do
+  @doc """
+  Search for stream entries by "indexed" attributes
+
+  ## Parameter `search_attrs`
+
+  search_attrs is a map of index names and the value that we search for in the index.
+  if an index is omitted a wildcard is used for its value.
+
+  indexes are:
+  * `:id` - uuid, should be unique among the subscribed topics
+  * `:sequence` - integer, not unique
+  """
+  def search_in_archive(search_attrs) do
+    id = Map.get(search_attrs, :id, "*")
+    sequence = Map.get(search_attrs, :sequence, "*")
+
     Process.flag(:trap_exit, true)
-    consumer = %Consumer{stream_name: "HELLO", durable_name: "SEARCHER", filter_subject: "greetings.#{id}", ack_wait: 5_000_000_000}
+
+    # setup consumer for searching the stream
+    consumer = %Consumer{stream_name: "HELLO", durable_name: "SEARCHER", filter_subject: "greetings.#{id}.#{sequence}", ack_wait: 5_000_000_000}
     Consumer.create(:gnat, consumer)
     {:ok, consumer_pid} = Jetstream.PullConsumer.start_link(NatsTestIex.SearchingPullConsumer, [self(), id])
+
+    # receive results
     receive do
       {:found_msg, msg} ->
         IO.puts(msg)
-      ignored ->
-        IO.inspect(ignored, label: "ignored message")
     after 5000 ->
         IO.puts("nothing found after 5 seconds")
     end
+
+    # gracefully tear down the consumer
     :ok = Jetstream.PullConsumer.close(consumer_pid)
     receive do
       {:EXIT, consumer_pid, :shutdown} ->

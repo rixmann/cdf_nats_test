@@ -13,7 +13,7 @@ defmodule NatsTestIex.LoggerPullConsumer do
   @impl true
   def handle_message(message, state) do
     # :timer.sleep(1000)
-    IO.puts("Pull Consumer #{state} got message: #{message.body} on topic #{message.topic}")
+    # IO.puts("Pull Consumer #{state} got message: #{message.body} on topic #{message.topic}")
     {:ack, state}
   end
 end
