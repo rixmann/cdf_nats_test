@@ -4,7 +4,6 @@ import Config
 config :logger,
   level: :error
 
-
 try do
   import_config "#{Mix.env()}.exs"
 rescue

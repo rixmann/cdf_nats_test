@@ -24,7 +24,7 @@ defmodule NatsTestIex.MixProject do
     [
       {:gnat, "~> 1.8"},
       {:jetstream, "~> 0.0"},
-      { :uuid, "~> 1.1" },
+      {:uuid, "~> 1.1"}
     ]
   end
 end
