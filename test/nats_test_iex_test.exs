@@ -1,6 +1,8 @@
 defmodule NatsTestIexTest do
   use ExUnit.Case
 
+  @moduletag timeout: 5000
+
   test "CDR started" do
     assert Process.alive?(Process.whereis(NatsTestIex.CDR))
   end

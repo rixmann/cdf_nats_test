@@ -18,13 +18,13 @@ defmodule NatsTestIex.CDR do
   end
 
   def handle_call(:pop, _from, [head | tail]) do
-    IO.puts("NatsTestIex.CDR pop #{Kernel.inspect(tail)}")
+    IO.puts("NatsTestIex.CDR pop #{Kernel.inspect(head)} #{Kernel.inspect(tail)}")
     {:reply, [head], tail}
   end
 
   @impl true
   def handle_cast({:push, element}, state) do
-    IO.puts("NatsTestIex.CDR push #{Kernel.inspect([element | state])}")
+    IO.puts("NatsTestIex.CDR push #{Kernel.inspect(element)} #{Kernel.inspect(state)}")
     {:noreply, [element | state]}
   end
 end
