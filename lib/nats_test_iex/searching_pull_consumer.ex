@@ -12,7 +12,12 @@ defmodule NatsTestIex.SearchingPullConsumer do
 
   @impl true
   def handle_message(message, [reply_to, id] = state) do
-    send(reply_to, {:found_msg, "Found event for id #{id} got message: #{message.body} on topic #{message.topic}"})
+    send(
+      reply_to,
+      {:found_msg,
+       "Found event for id #{id} got message: #{message.body} on topic #{message.topic}"}
+    )
+
     {:ack, state}
   end
 end
