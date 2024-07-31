@@ -1,13 +1,15 @@
 defmodule NatsTestIex.CDRPullConsumer do
   use Jetstream.PullConsumer
 
-  def start_link(_) do
-    Jetstream.PullConsumer.start_link(__MODULE__, %{}, [])
+  def start_link(config) do
+    Jetstream.PullConsumer.start_link(__MODULE__, config, [])
   end
 
   @impl true
-  def init(state) do
-    {:ok, Map.put(state, :nr, 0),
+  def init(config) do
+    IO.puts("NatsTestIex.CDRPullConsumer init #{Kernel.inspect(config)}")
+
+    {:ok, Map.put(config, :nr, 0),
      connection_name: :gnat, stream_name: "CDR", consumer_name: "CDR"}
   end
 
@@ -15,7 +17,11 @@ defmodule NatsTestIex.CDRPullConsumer do
   def handle_message(message, state) do
     # :timer.sleep(1000)
     term = message.body |> :erlang.binary_to_term()
-    IO.puts("NatsTestIex.CDRPullConsumer #{Kernel.inspect(state)} #{Kernel.inspect(term)}")
+
+    IO.puts(
+      "NatsTestIex.CDRPullConsumer handle_message #{Kernel.inspect(state)} #{Kernel.inspect(term)}"
+    )
+
     NatsTestIex.CDR.arrived(term)
     {:ack, new_state(state)}
   end
