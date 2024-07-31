@@ -19,6 +19,7 @@ defmodule NatsTestIexTest do
     on_exit(fn -> Process.exit(pid, :exit) end)
     m = %{n: 1, apn: "kalle"}
     Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
+    Process.sleep(300)
     cdr = get_one([])
     empty = NatsTestIex.CDR.get()
     assert cdr === m
@@ -31,6 +32,7 @@ defmodule NatsTestIexTest do
     on_exit(fn -> Process.exit(pid, :exit) end)
     m = %{n: 2, apn: "kalle"}
     Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
+    Process.sleep(300)
     cdr = get_one([])
     empty = NatsTestIex.CDR.get()
     assert cdr === m
@@ -51,6 +53,6 @@ defmodule NatsTestIexTest do
 
   defp start_wait() do
     _ = NatsTestIex.CDRPullConsumer.start_link(:ignore)
-    Process.sleep(5_000)
+    Process.sleep(1_000)
   end
 end
