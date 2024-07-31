@@ -7,6 +7,22 @@ defmodule NatsTestIex do
 
   alias Jetstream.API.{Consumer, Stream}
 
+  def cdr_consumer_create(max_ack_pending) do
+    consumer = %Jetstream.API.Consumer{
+      stream_name: "CDR",
+      durable_name: "CDR",
+      ack_wait: 5_000_000_000,
+      max_deliver: 200,
+      max_ack_pending: max_ack_pending
+    }
+
+    Jetstream.API.Consumer.create(:gnat, consumer)
+  end
+
+  def cdr_consumer_delete() do
+    Jetstream.API.Consumer.delete(:gnat, "CDR", "CDR")
+  end
+
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
@@ -115,13 +131,7 @@ defmodule NatsTestIex do
 
     {:ok, _} = Jetstream.API.Stream.create(:gnat, stream)
 
-    consumer = %Jetstream.API.Consumer{
-      stream_name: "CDR",
-      durable_name: "CDR",
-      ack_wait: 5_000_000_000,
-      max_deliver: 200
-    }
-
-    {:ok, _} = Jetstream.API.Consumer.create(:gnat, consumer)
+    # max_ack_pending default is 20000
+    {:ok, _} = cdr_consumer_create(20_000)
   end
 end

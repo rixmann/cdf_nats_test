@@ -7,7 +7,7 @@ defmodule NatsTestIex.CDRPullConsumer do
 
   @impl true
   def init(config) do
-    IO.puts("NatsTestIex.CDRPullConsumer init #{Kernel.inspect(config)}")
+    IO.puts("CDRPullConsumer init #{Kernel.inspect(config)}")
 
     {:ok, Map.put(config, :nr, 0),
      connection_name: :gnat, stream_name: "CDR", consumer_name: "CDR"}
@@ -16,14 +16,10 @@ defmodule NatsTestIex.CDRPullConsumer do
   @impl true
   def handle_message(message, state) do
     # :timer.sleep(1000)
-    term = message.body |> :erlang.binary_to_term()
-
-    IO.puts(
-      "NatsTestIex.CDRPullConsumer handle_message #{Kernel.inspect(state)} #{Kernel.inspect(term)}"
-    )
-
-    NatsTestIex.CDR.arrived(term)
-    {:ack, new_state(state)}
+    body = message.body |> :erlang.binary_to_term() |> Kernel.inspect()
+    IO.puts("CDRPullConsumer handle_message #{body} #{Kernel.inspect(state)}")
+    NatsTestIex.CDR.arrived(message)
+    {:noreply, new_state(state)}
   end
 
   #
