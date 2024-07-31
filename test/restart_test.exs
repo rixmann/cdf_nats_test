@@ -1,4 +1,4 @@
-defmodule NatsTestIexTest do
+defmodule NatsTestIex.RestartTest do
   use ExUnit.Case
 
   @moduletag timeout: 10_000
