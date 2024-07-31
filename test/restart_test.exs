@@ -7,14 +7,26 @@ defmodule NatsTestIex.RestartTest do
     assert Process.alive?(Process.whereis(NatsTestIex.CDR))
   end
 
-  test "publish one" do
-    pid = NatsTestIex.TestHelper.cdr_start()
+  test "publish one ack" do
+    pid = NatsTestIex.TestHelper.cdr_start(%{reply: :ack})
     Process.sleep(999)
     m = %{n: 1, apn: "one"}
     Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
     cdr = NatsTestIex.TestHelper.cdr_get_one()
     empty = NatsTestIex.CDR.get()
-    NatsTestIex.TestHelper.cdr_stop(pid, :one)
+    NatsTestIex.TestHelper.cdr_stop(pid, :one_ack)
+    assert cdr === m
+    assert empty === []
+  end
+
+  test "publish one noreply" do
+    pid = NatsTestIex.TestHelper.cdr_start(%{reply: :noreply})
+    Process.sleep(999)
+    m = %{n: 1, apn: "one"}
+    Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
+    cdr = NatsTestIex.TestHelper.cdr_get_one()
+    empty = NatsTestIex.CDR.get()
+    NatsTestIex.TestHelper.cdr_stop(pid, :one_noreply)
     assert cdr === m
     assert empty === []
   end

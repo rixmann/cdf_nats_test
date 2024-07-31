@@ -23,16 +23,33 @@ defmodule NatsTestIex.CDR do
   end
 
   def handle_call(:pop, _from, [head | tail]) do
-    Jetstream.ack_next(head, "cdr")
-    result = head.body |> :erlang.binary_to_term()
+    result = ack_next(head) |> :erlang.binary_to_term()
     IO.puts("NatsTestIex.CDR pop #{Kernel.inspect(result)} #{Enum.count(tail)}")
     {:reply, [result], tail}
   end
 
   @impl true
   def handle_cast({:push, element}, state) do
-    result = element.body |> :erlang.binary_to_term()
+    result = body(element) |> :erlang.binary_to_term()
     IO.puts("NatsTestIex.CDR push #{Kernel.inspect(result)} #{Enum.count(state)}")
     {:noreply, [element | state]}
   end
+
+  #
+  # Internal functions
+  #
+
+  defp ack_next(%{body: body} = message) do
+    Jetstream.ack_next(message, "cdr")
+    body
+  end
+
+  defp ack_next(body), do: body
+
+  defp body(%{body: body} = message) do
+    Jetstream.ack_next(message, "cdr")
+    body
+  end
+
+  defp body(body), do: body
 end
