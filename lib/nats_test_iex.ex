@@ -11,7 +11,7 @@ defmodule NatsTestIex do
     consumer = %Jetstream.API.Consumer{
       stream_name: "CDR",
       durable_name: "CDR",
-      ack_wait: 5_000_000_000,
+      ack_wait: 50_000_000_000,
       max_deliver: 200,
       max_ack_pending: max_ack_pending
     }

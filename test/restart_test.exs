@@ -8,7 +8,7 @@ defmodule NatsTestIex.RestartTest do
   end
 
   test "publish one ack" do
-    pid = NatsTestIex.TestHelper.cdr_start(%{reply: :ack})
+    pid = NatsTestIex.TestHelper.cdr_start(%{reply: :ack, testcase: :one_ack})
     Process.sleep(999)
     m = %{n: 11, apn: "one_ack"}
     Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
@@ -20,7 +20,7 @@ defmodule NatsTestIex.RestartTest do
   end
 
   test "publish one noreply" do
-    pid = NatsTestIex.TestHelper.cdr_start(%{reply: :noreply})
+    pid = NatsTestIex.TestHelper.cdr_start(%{reply: :noreply, testcase: :one_noreply})
     Process.sleep(999)
     m = %{n: 12, apn: "one_noreply"}
     Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
@@ -32,7 +32,7 @@ defmodule NatsTestIex.RestartTest do
   end
 
   test "publish two" do
-    pid = NatsTestIex.TestHelper.cdr_start()
+    pid = NatsTestIex.TestHelper.cdr_start(%{testcase: :two})
     m = %{n: 2, apn: "two"}
     Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
     cdr = NatsTestIex.TestHelper.cdr_get_one()
