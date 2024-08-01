@@ -8,15 +8,14 @@ defmodule NatsTestIex.FlowControlTest do
   test "stop at four" do
     n = 4
     :ok = NatsTestIex.cdr_consumer_delete()
-    :ok = NatsTestIex.cdr_stream_delete()
-    {:ok, _} = NatsTestIex.cdr_stream_create()
     {:ok, _} = NatsTestIex.cdr_consumer_create(n)
     pid = NatsTestIex.TestHelper.cdr_start(%{reply: :noreply})
     pub(20)
-    stop_arriving_at(n)
+    :ok = stop_arriving_at(n)
     arrived = NatsTestIex.CDR.count()
-    NatsTestIex.TestHelper.cdr_stop(pid, :ten)
     assert arrived === n
+    :ok = empty_queue(20)
+    NatsTestIex.TestHelper.cdr_stop(pid, :ten)
   end
 
   #
@@ -25,7 +24,14 @@ defmodule NatsTestIex.FlowControlTest do
 
   defp stop_arriving_at(n), do: NatsTestIex.CDR.count() |> stop_arriving_at(n)
   defp stop_arriving_at(c, n) when c < n, do: stop_arriving_at(n)
-  defp stop_arriving_at(n, n), do: :ok
+  defp stop_arriving_at(_, _), do: :ok
+
+  defp empty_queue(0), do: :ok
+  defp empty_queue(n) do
+    NatsTestIex.TestHelper.cdr_get_one()
+    IO.puts("arrived: #{n}")
+    empty_queue(n - 1)
+  end
 
   defp pub(0), do: :ok
 
