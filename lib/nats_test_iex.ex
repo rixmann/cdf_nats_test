@@ -22,6 +22,20 @@ defmodule NatsTestIex do
   def cdr_consumer_delete() do
     Jetstream.API.Consumer.delete(:gnat, "CDR", "CDR")
   end
+  def cdr_stream_create() do
+    stream = %Jetstream.API.Stream{
+      name: "CDR",
+      subjects: ["cdr"],
+      retention: :limits,
+      discard: :old,
+      max_bytes: 524_288_000
+    }
+
+    {:ok, _} = Jetstream.API.Stream.create(:gnat, stream)
+  end
+  def cdr_stream_delete() do
+    Jetstream.API.Stream.delete(:gnat, "CDR")
+  end
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications

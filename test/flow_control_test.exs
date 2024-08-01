@@ -8,8 +8,10 @@ defmodule NatsTestIex.FlowControlTest do
   test "stop at four" do
     n = 4
     :ok = NatsTestIex.cdr_consumer_delete()
+    :ok = NatsTestIex.cdr_stream_delete()
+    {:ok, _} = NatsTestIex.cdr_stream_create()
     {:ok, _} = NatsTestIex.cdr_consumer_create(n)
-    pid = NatsTestIex.TestHelper.cdr_start()
+    pid = NatsTestIex.TestHelper.cdr_start(%{reply: :noreply})
     pub(20)
     stop_arriving_at(n)
     arrived = NatsTestIex.CDR.count()

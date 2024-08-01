@@ -2,9 +2,21 @@ ExUnit.start()
 
 defmodule NatsTestIex.TestHelper do
   def cdr_get_one(), do: NatsTestIex.CDR.get() |> cdr_get_one()
-  def cdr_start(), do: Process.spawn(fn -> cdr_start_wait(%{}) end, [])
-  def cdr_start(config), do: Process.spawn(fn -> cdr_start_wait(config) end, [])
-  def cdr_stop(pid, kind), do: Process.exit(pid, kind)
+  def cdr_start() do
+    res = Process.spawn(fn -> cdr_start_wait(%{}) end, [])
+    Process.sleep(999)
+    res
+  end
+  def cdr_start(config) do
+    res = Process.spawn(fn -> cdr_start_wait(config) end, [])
+    Process.sleep(999)
+    res
+  end
+  def cdr_stop(pid, kind) do
+    res = Process.exit(pid, kind)
+    Process.sleep(10)
+    res
+  end
 
   #
   # Internal functions
