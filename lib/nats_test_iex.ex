@@ -127,12 +127,12 @@ defmodule NatsTestIex do
       subjects: ["cdr"],
       retention: :limits,
       discard: :old,
-      max_bytes: 524_288_000
+      max_bytes: 524_288_000,
     }
 
     {:ok, _} = Jetstream.API.Stream.create(:gnat, stream)
 
     # max_ack_pending default is 20000
-    {:ok, _} = cdr_consumer_create(20_000)
+    {:ok, _} = cdr_consumer_create(4)
   end
 end
