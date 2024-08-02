@@ -7,21 +7,19 @@ defmodule NatsTestIex do
 
   alias Jetstream.API.{Consumer, Stream}
 
+  @spec cdr_consumer_create(non_neg_integer()) :: {:ok, map()} | {:error, map()}
   def cdr_consumer_create(max_ack_pending) do
-    consumer = %Jetstream.API.Consumer{
+    consumer = %{
       stream_name: "CDR",
       durable_name: "CDR",
       ack_wait: 50_000_000_000,
       max_deliver: 200,
-      max_ack_pending: max_ack_pending,
-      deliver_policy: :new
+      #      deliver_policy: :new,
+      max_ack_pending: max_ack_pending
     }
 
-    Jetstream.API.Consumer.create(:gnat, consumer)
-  end
-
-  def cdr_consumer_delete() do
-    Jetstream.API.Consumer.delete(:gnat, "CDR", "CDR")
+    Jetstream.API.Consumer.info(:gnat, consumer.stream_name, consumer.durable_name)
+    |> cdr_consumer_correct(consumer)
   end
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
@@ -121,8 +119,35 @@ defmodule NatsTestIex do
     Consumer.delete(:gnat, "HELLO", "SEARCHER")
   end
 
+  defp cdr_consumer_correct({:ok, info}, config) do
+    config_keys = Map.keys(config)
+    f = fn value -> value end
+
+    Map.take(info.config, config_keys)
+    |> Map.update(:stream_name, config.stream_name, f)
+    |> cdr_consumer_correct_config(config)
+  end
+
+  defp cdr_consumer_correct({:error, _error}, config) do
+    IO.puts("CDR consumer create")
+    consumer = Kernel.struct(Jetstream.API.Consumer, config)
+    Jetstream.API.Consumer.create(:gnat, consumer)
+  end
+
+  defp cdr_consumer_correct_config(config, config), do: {:ok, %{config: config}}
+
+  defp cdr_consumer_correct_config(old, config) do
+    IO.puts("CDR consumer delete old")
+    IO.inspect(old)
+    Jetstream.API.Consumer.delete(:gnat, old.stream_name, old.durable_name)
+    IO.puts("CDR consumer create")
+    IO.inspect(config)
+    consumer = Kernel.struct(Jetstream.API.Consumer, config)
+    Jetstream.API.Consumer.create(:gnat, consumer)
+  end
+
   defp cdr_stream_consumer!() do
-    stream = %Jetstream.API.Stream{
+    stream = %{
       name: "CDR",
       subjects: ["one_cdr"],
       retention: :limits,
@@ -130,9 +155,30 @@ defmodule NatsTestIex do
       max_bytes: 524_288_000
     }
 
-    {:ok, _} = Jetstream.API.Stream.create(:gnat, stream)
+    :ok = Jetstream.API.Stream.info(:gnat, stream.name) |> cdr_stream_correct(stream)
 
     # max_ack_pending default is 20000
     {:ok, _} = cdr_consumer_create(20_000)
+  end
+
+  defp cdr_stream_correct({:ok, info}, config) do
+    config_keys = Map.keys(config)
+    Map.take(info.config, config_keys) |> cdr_stream_correct_config(config)
+  end
+
+  defp cdr_stream_correct({:error, _error}, config) do
+    IO.puts("CDR stream create")
+    stream = Kernel.struct(Jetstream.API.Stream, config)
+    Jetstream.API.Stream.create(:gnat, stream) |> Kernel.elem(0)
+  end
+
+  defp cdr_stream_correct_config(config, config), do: :ok
+
+  defp cdr_stream_correct_config(old, config) do
+    IO.puts("CDR stream delete old")
+    Jetstream.API.Stream.delete(:gnat, old.name)
+    IO.puts("CDR stream create")
+    stream = Kernel.struct(Jetstream.API.Stream, config)
+    Jetstream.API.Stream.create(:gnat, stream) |> Kernel.elem(0)
   end
 end
