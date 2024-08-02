@@ -3,52 +3,40 @@ defmodule NatsTestIex.RestartTest do
 
   @moduletag timeout: 10_000
 
-  test "CDR started" do
-    assert Process.alive?(Process.whereis(NatsTestIex.CDR))
+  test "pull consumer maintenece, when using ack" do
+    pull_consumer_maintenece(:ack)
   end
 
-  test "CDR working" do
-    m = %{n: 0, apn: "zero"}
-    NatsTestIex.CDR.arrived(m)
-    cdr = get_one([])
-    assert cdr === m
-  end
-
-  test "publish one" do
-    pid = Process.spawn(fn -> start_wait() end, [])
-    m = %{n: 1, apn: "one"}
-    Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
-    cdr = get_one([])
-    empty = NatsTestIex.CDR.get()
-    Process.exit(pid, :one)
-    assert cdr === m
-    assert empty === []
-  end
-
-  test "publish two" do
-    pid = Process.spawn(fn -> start_wait() end, [])
-    m = %{n: 2, apn: "two"}
-    Gnat.pub(:gnat, "cdr", :erlang.term_to_binary(m))
-    cdr = get_one([])
-    empty = NatsTestIex.CDR.get()
-    Process.exit(pid, :two)
-    assert cdr === m
-    assert empty === []
+  test "pull consumer maintenece, when using noreply" do
+    pull_consumer_maintenece(:noreply)
   end
 
   #
   # Internal functions
   #
 
-  defp get_one([]) do
-    Process.sleep(900)
-    NatsTestIex.CDR.get() |> get_one()
-  end
+  defp pull_consumer_maintenece(reply) do
+    pid1 = NatsTestIex.TestHelper.cdr_start(%{reply: reply})
+    m1 = %{apn: "first_pull_consumer_" <> Atom.to_string(reply)}
+    Gnat.pub(:gnat, "one_cdr", :erlang.term_to_binary(m1))
+    cdr1 = NatsTestIex.TestHelper.cdr_get_one()
+    empty = NatsTestIex.CDR.get()
+    assert cdr1 === m1
+    assert empty === []
 
-  defp get_one([one]), do: one
+    # maintenece
+    NatsTestIex.TestHelper.cdr_stop(pid1, :first_pull_consumer_ack)
+    NatsTestIex.cdr_consumer_delete()
+    m2 = %{apn: "second_pull_consumer_ack"}
+    Gnat.pub(:gnat, "one_cdr", :erlang.term_to_binary(m2))
 
-  defp start_wait() do
-    _ = NatsTestIex.CDRPullConsumer.start_link(%{})
-    Process.sleep(100_000)
+    # max_ack_pending default is 20000
+    {:ok, _} = NatsTestIex.cdr_consumer_create(20_000)
+    pid2 = NatsTestIex.TestHelper.cdr_start(%{reply: reply})
+    cdr2 = NatsTestIex.TestHelper.cdr_get_one()
+    empty = NatsTestIex.CDR.get()
+    NatsTestIex.TestHelper.cdr_stop(pid2, :second_pull_consumer_ack)
+    assert cdr2 === m2
+    assert empty === []
   end
 end
