@@ -9,11 +9,10 @@ defmodule NatsTestIex.TestHelper do
   end
 
   def cdr_get_one(), do: NatsTestIex.CDR.get() |> cdr_get_one()
-  def cdr_start(), do: cdr_start(%{})
 
-  def cdr_start(config) do
+  def cdr_pull_start(config) do
     s = Kernel.self()
-    pid = Process.spawn(fn -> cdr_start_wait(config, s) end, [])
+    pid = Process.spawn(fn -> cdr_pull_start_wait(config, s) end, [])
 
     receive do
       {:started, ^pid} -> :ok
@@ -22,11 +21,12 @@ defmodule NatsTestIex.TestHelper do
     pid
   end
 
-  def cdr_stop(pid, kind) do
+  def cdr_pull_stop(pid, kind) do
     # Allow old items in stream to propagate
     Process.sleep(999)
     NatsTestIex.CDR.get() |> cdr_await_empty("stop")
     Process.exit(pid, kind)
+    Process.alive?(pid) |> cdr_pull_await_exit(pid)
   end
 
   #
@@ -50,7 +50,10 @@ defmodule NatsTestIex.TestHelper do
 
   defp cdr_get_one([one]), do: one
 
-  defp cdr_start_wait(config, reply_to) do
+  defp cdr_pull_await_exit(true, pid), do: Process.alive?(pid) |> cdr_pull_await_exit(pid)
+  defp cdr_pull_await_exit(false, _pid), do: Process.sleep(999)
+
+  defp cdr_pull_start_wait(config, reply_to) do
     _ = NatsTestIex.CDRPullConsumer.start_link(config)
     Process.send(reply_to, {:started, Kernel.self()}, [])
     Process.sleep(100_000)

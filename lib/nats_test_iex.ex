@@ -14,7 +14,7 @@ defmodule NatsTestIex do
       durable_name: "CDR",
       ack_wait: 50_000_000_000,
       max_deliver: 200,
-      #      deliver_policy: :new,
+      deliver_policy: :all,
       max_ack_pending: max_ack_pending
     }
 

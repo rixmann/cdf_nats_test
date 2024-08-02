@@ -1,10 +1,14 @@
 defmodule NatsTestIex.RestartTest do
   use ExUnit.Case
 
-  @moduletag timeout: 10_000
+  @moduletag timeout: 20_000
 
   test "pull consumer maintenece, when using ack" do
     pull_consumer_maintenece(:ack)
+  end
+
+  test "pull consumer maintenece, when using noreply" do
+    pull_consumer_maintenece(:noreply)
   end
 
   #
@@ -12,8 +16,9 @@ defmodule NatsTestIex.RestartTest do
   #
 
   def pull_consumer_maintenece(reply) do
-    pid1 = NatsTestIex.TestHelper.cdr_start(%{reply: reply})
-    m1 = %{apn: "first_pull_consumer_" <> Atom.to_string(reply)}
+    apn = "first_pull_consumer_" <> Atom.to_string(reply)
+    pid1 = NatsTestIex.TestHelper.cdr_pull_start(%{reply: reply, testcase: apn})
+    m1 = %{apn: apn}
     Gnat.pub(:gnat, "one_cdr", :erlang.term_to_binary(m1))
     cdr1 = NatsTestIex.TestHelper.cdr_get_one()
     empty = NatsTestIex.CDR.get()
@@ -21,14 +26,15 @@ defmodule NatsTestIex.RestartTest do
     assert empty === []
 
     # maintenece
-    NatsTestIex.TestHelper.cdr_stop(pid1, :first_pull_consumer_ack)
-    m2 = %{apn: "second_pull_consumer_ack"}
+    NatsTestIex.TestHelper.cdr_pull_stop(pid1, String.to_atom(apn))
+    apn = "second_pull_consumer_" <> Atom.to_string(reply)
+    m2 = %{apn: apn}
     Gnat.pub(:gnat, "one_cdr", :erlang.term_to_binary(m2))
 
-    pid2 = NatsTestIex.TestHelper.cdr_start(%{reply: reply})
+    pid2 = NatsTestIex.TestHelper.cdr_pull_start(%{reply: reply, testcase: apn})
     cdr2 = NatsTestIex.TestHelper.cdr_get_one()
     empty = NatsTestIex.CDR.get()
-    NatsTestIex.TestHelper.cdr_stop(pid2, :second_pull_consumer_ack)
+    NatsTestIex.TestHelper.cdr_pull_stop(pid2, String.to_atom(apn))
     assert cdr2 === m2
     assert empty === []
   end
