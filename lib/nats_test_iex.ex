@@ -8,7 +8,7 @@ defmodule NatsTestIex do
   alias Jetstream.API.{Consumer, Stream}
 
   @spec cdr_consumer_create(non_neg_integer()) :: {:ok, map()} | {:error, map()}
-  def cdr_consumer_create(max_ack_pending) do
+  def cdr_consumer_create(max_ack_pending, extra \\ %{}) do
     consumer = %{
       stream_name: "CDR",
       durable_name: "CDR",
@@ -16,7 +16,7 @@ defmodule NatsTestIex do
       max_deliver: 200,
       deliver_policy: :all,
       max_ack_pending: max_ack_pending
-    }
+    } |> Map.merge(extra)
 
     Jetstream.API.Consumer.info(:gnat, consumer.stream_name, consumer.durable_name)
     |> cdr_consumer_correct(consumer)
