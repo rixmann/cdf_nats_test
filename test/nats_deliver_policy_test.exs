@@ -15,19 +15,19 @@ defmodule NatsTestIex.NatsDeliveryPolicyTest do
     NatsTestIex.TestHelper.cdr_pull_stop(pid1, String.to_atom(apn))
 
     IO.puts "starting new consumer"
-    NatsTestIex.cdr_consumer_create(20_000, %{delivery_policy: :all, deliver_policy: :all})
+    NatsTestIex.cdr_consumer_create(20_000, %{deliver_policy: :new})
+    pid3 = NatsTestIex.TestHelper.cdr_pull_start(%{reply: :ack, testcase: apn})
+    Process.sleep(100)
+    assert [] === NatsTestIex.CDR.get()
+    NatsTestIex.TestHelper.cdr_pull_stop(pid3, String.to_atom(apn))
+
+    IO.puts "starting final consumer"
+    NatsTestIex.cdr_consumer_create(20_000, %{deliver_policy: :all})
     pid2 = NatsTestIex.TestHelper.cdr_pull_start(%{reply: :ack, testcase: apn})
     assert cdr1 === NatsTestIex.TestHelper.cdr_get_one()
     assert [] === NatsTestIex.CDR.get()
     NatsTestIex.TestHelper.cdr_pull_stop(pid2, String.to_atom(apn))
 
-    IO.puts "starting final consumer"
-    NatsTestIex.cdr_consumer_create(20_000, %{delivery_policy: :new, deliver_policy: :new})
-    pid3 = NatsTestIex.TestHelper.cdr_pull_start(%{reply: :ack, testcase: apn})
-    Process.sleep(100)
-    assert [] === NatsTestIex.CDR.get()
-    NatsTestIex.TestHelper.cdr_pull_stop(pid3, String.to_atom(apn))
-    
   end
 
   #
