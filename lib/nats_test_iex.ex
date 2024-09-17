@@ -2,6 +2,7 @@ defmodule NatsTestIex do
   @moduledoc """
   Documentation for `NatsTestIex`.
   """
+  import Supervisor.Spec
 
   use Application
 
@@ -25,23 +26,42 @@ defmodule NatsTestIex do
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
+    hostname = (:os.getenv('NATS_HOSTNAME') || 'localhost') |> to_string
+    port = (:os.getenv('NATS_PORT') || '4222') |> to_string |> String.to_integer
+    pool_size = (:os.getenv('NATS_POOL_SIZE') || '10') |> to_string |> String.to_integer
     children = [
       {Gnat.ConnectionSupervisor,
        %{
          name: :gnat,
          connection_settings: [
-           %{host: "localhost", port: 4222}
+           %{host: hostname, port: port}
          ]
        }},
       NatsTestIex.QueueSupervisor,
+      NatsTestIex.KVClientSupervisor,
       %{id: NatsTestIex.CDR, start: {NatsTestIex.CDR, :start_link, [[]]}}
-    ]
+    ] ++ gnat_pool_children(hostname, port, pool_size)
 
     res = Supervisor.start_link(children, strategy: :one_for_one)
     :timer.sleep(100)
-    create_stream_consumer()
-    cdr_stream_consumer!()
+    #create_stream_consumer()
+    #cdr_stream_consumer!()
     res
+  end
+
+  def gnat_pool_children(hostname, port, pool_size) do
+    for i <- 1..pool_size do
+      name = "gnat-#{i}" |> String.to_atom
+      supervisor_name = "gnat_connection_supervisor-#{i}" |> String.to_atom
+      settings = %{
+         name: name,
+         connection_settings: [
+           %{host: hostname, port: port}
+         ]
+      }
+      %{id: supervisor_name, start: {Gnat.ConnectionSupervisor, :start_link, [settings, [name: supervisor_name]]}}
+ #      worker(Gnat.ConnectionSupervisor, [settings, [name: supervisor_name]])
+    end
   end
 
   @doc """
