@@ -16,7 +16,7 @@ defmodule NatsTestIex.CDRPullConsumer do
   def handle_message(message, state) do
     # :timer.sleep(1000)
     body = message.body |> :erlang.binary_to_term() |> Kernel.inspect()
-    IO.puts("CDRPullConsumer handle_message #{body} #{Kernel.inspect(state)}")
+    IO.puts("CDRPullConsumer handle_message #{inspect(message)} #{Kernel.inspect(state)}")
     arrived(message, state)
     {state.reply, new_state(state)}
   end
