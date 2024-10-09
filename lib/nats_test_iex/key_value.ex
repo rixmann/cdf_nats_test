@@ -2,36 +2,46 @@ defmodule NatsTestIex.KeyValue do
 
   @bucket "my-bucket"
 
-  def provision() do
-    Gnat.Jetstream.API.KV.create_bucket(:gnat, @bucket, max_bucket_size: 1_000_000)
+  def provision(extra_params \\ []) do
+    params = [max_bucket_size: extra_params[:max_bucket_size] || 1_000_000] ++ Keyword.delete(extra_params, :max_bucket_size)
+    bucket = extra_params[:bucket] |> get_bucket()
+    Gnat.Jetstream.API.KV.create_bucket(:gnat, bucket, params)
   end
 
-  def deprovision() do
-    Gnat.Jetstream.API.KV.delete_bucket(:gnat, @bucket)
+  def deprovision(bucket \\ nil) do
+    Gnat.Jetstream.API.KV.delete_bucket(:gnat, get_bucket(bucket))
   end
 
-  def insert() do
-    key = random_string()
-    value = random_string()
-    :ok = Gnat.Jetstream.API.KV.create_key(get_random_pool_connection(), @bucket, key, value)
-    {key, value}
+  def insert(key_size, value_size, bucket \\ nil) do
+    key = random_string(key_size)
+    value = random_string(value_size)
+    case Gnat.Jetstream.API.KV.create_key(get_random_pool_connection(), get_bucket(bucket), key, value) do
+      :ok ->
+        {key, value}
+      {:error, reason} ->
+        IO.puts("error inserting key/value pair: #{inspect reason}")
+        nil
+    end
   end
 
-  def read(key) do
-    Gnat.Jetstream.API.KV.get_value(get_random_pool_connection(), @bucket, key)
+  def read(key, bucket \\ nil) do
+    Gnat.Jetstream.API.KV.get_value(get_random_pool_connection(), get_bucket(bucket), key)
   end
 
-  def delete(key) do
-    :ok = Gnat.Jetstream.API.KV.delete_key(get_random_pool_connection(), @bucket, key)
-#     :ok = Gnat.Jetstream.API.KV.purge_key(get_random_pool_connection(), @bucket, key)
+  def delete(key, bucket \\ nil) do
+    Gnat.Jetstream.API.KV.delete_key(get_random_pool_connection(), get_bucket(bucket), key)
+    #    :ok = Gnat.Jetstream.API.KV.purge_key(get_random_pool_connection(), @bucket, key)
   end
 
-  def info() do
-    Gnat.Jetstream.API.Stream.info(:gnat, Gnat.Jetstream.API.KV.stream_name(@bucket))
+  def info(bucket \\ nil) do
+    Gnat.Jetstream.API.Stream.info(:gnat, Gnat.Jetstream.API.KV.stream_name(get_bucket(bucket)))
   end
 
-  defp random_string() do
-    for _ <- 1..10, into: "", do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz')>>
+  defp get_bucket(nil), do: @bucket
+  defp get_bucket(name), do: name
+
+  defp random_string(size) do
+    Base.encode64(:crypto.strong_rand_bytes(size))
   end
 
   def get_random_pool_connection() do
