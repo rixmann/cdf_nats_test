@@ -2,6 +2,8 @@ defmodule NatsTestIex.KVClient do
   use GenServer
 
   @default_attempts_per_second 100
+  @default_key_size 10
+  @default_value_size 1800
 
   def start_link(state) do
     attempts_per_second = state[:attempts_per_second] || @default_attempts_per_second
@@ -9,7 +11,10 @@ defmodule NatsTestIex.KVClient do
     state = %{
       id: state[:id],
       attempts_per_second: attempts_per_second,
-      inserted: inserted
+      inserted: inserted,
+      key_size: state[:key_size] || @default_key_size,
+      value_size: state[:value_size] || @default_value_size,
+      bucket: state[:bucket]
     }
     GenServer.start_link(__MODULE__, state)
   end
@@ -22,7 +27,7 @@ defmodule NatsTestIex.KVClient do
 
   @impl true
   def handle_info({:do_something, already_done, since}, state = %{attempts_per_second: to_do}) when already_done < to_do do
-    fresh_inserted = insert_kv()
+    fresh_inserted = insert_kv(state)
     state = delete_oldest(state)
 
     send(self(), {:do_something, already_done + 1, since})
@@ -45,8 +50,8 @@ defmodule NatsTestIex.KVClient do
     {:noreply, state}
   end
 
-  def insert_kv() do
-    NatsTestIex.KeyValue.insert()
+  def insert_kv(%{key_size: key_size, value_size: value_size} = state) do
+    NatsTestIex.KeyValue.insert(key_size, value_size, state[:bucket])
   end
 
   def time_now(), do: :erlang.system_time(:millisecond)
@@ -57,9 +62,17 @@ defmodule NatsTestIex.KVClient do
       nil ->
         :ok
       {k, v} ->
-        v = NatsTestIex.KeyValue.read(k)
-        NatsTestIex.KeyValue.delete(k)
-        # IO.puts("result deleting #{state.id}: #{inspect res}")
+        case NatsTestIex.KeyValue.read(k, state[:bucket]) do
+          ^v ->
+            case NatsTestIex.KeyValue.delete(k, state[:bucket]) do
+              :ok ->
+                nil
+              other ->
+                IO.puts("error deleting key #{inspect k}: #{inspect other}")
+            end
+          other ->
+            IO.puts("error reading key #{inspect k}: #{inspect other}")
+        end
     end
     Map.put(state, :inserted, leftovers)
   end

@@ -60,7 +60,6 @@ defmodule NatsTestIex do
          ]
       }
       %{id: supervisor_name, start: {Gnat.ConnectionSupervisor, :start_link, [settings, [name: supervisor_name]]}}
- #      worker(Gnat.ConnectionSupervisor, [settings, [name: supervisor_name]])
     end
   end
 

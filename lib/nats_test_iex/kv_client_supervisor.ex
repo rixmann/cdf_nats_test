@@ -9,7 +9,7 @@ defmodule NatsTestIex.KVClientSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def start_subscribers(number, req_per_sec \\ 100) do
+  def start_subscribers(number, req_per_sec \\ 100, extra_config \\ %{}) do
     old_childs = DynamicSupervisor.which_children(__MODULE__)
 
     case Enum.split(old_childs, number) do
@@ -20,7 +20,8 @@ defmodule NatsTestIex.KVClientSupervisor do
         first_new = length(keep) + 1
 
         for i <- first_new..number do
-          spec = {NatsTestIex.KVClient, %{id: i, attempts_per_second: req_per_sec}}
+          spec = {NatsTestIex.KVClient, %{id: i,
+                                          attempts_per_second: req_per_sec} |> Map.merge(extra_config)}
           DynamicSupervisor.start_child(__MODULE__, spec)
         end
 
