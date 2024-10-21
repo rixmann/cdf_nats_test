@@ -40,6 +40,9 @@ defmodule NatsTestIex.KeyValue do
   defp get_bucket(nil), do: @bucket
   defp get_bucket(name), do: name
 
+  defp random_string(fun) when is_function(fun) do
+    fun.()
+  end
   defp random_string(size) do
     Base.encode64(:crypto.strong_rand_bytes(size))
   end
