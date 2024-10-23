@@ -40,11 +40,12 @@ defmodule NatsTestIex do
       NatsTestIex.QueueSupervisor,
       NatsTestIex.KVClientSupervisor,
       %{id: NatsTestIex.CDR, start: {NatsTestIex.CDR, :start_link, [[]]}}
-    ] ++ gnat_pool_children(hostname, port, pool_size)
+    ] ++ gnat_pool_children(hostname, port, pool_size) ++
+      [NatsTestIex.QueueChecker]
 
     res = Supervisor.start_link(children, strategy: :one_for_one)
     :timer.sleep(100)
-    #create_stream_consumer()
+    create_stream_consumer()
     #cdr_stream_consumer!()
     res
   end
