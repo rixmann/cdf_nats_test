@@ -5,10 +5,15 @@ defmodule NatsTestIex.QueueChecker do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  def send_some_messages(some) do
-    :ok = set_state(some)
-    for i <- 1..some do
-      :ok = Gnat.pub(:gnat, "greetings.#{UUID.uuid4()}.#{i}", "Hello World #{i}")
+  def send_some_messages(some, start_at \\ 1) do
+    # :ok = reset_state()
+    for i <- start_at..(start_at + some) do
+      # :ok = Gnat.pub(:gnat, "greetings.#{UUID.uuid4()}.#{i}", "Hello World #{i}")
+      {:ok, res} = Gnat.request(:gnat, "greetings", "Hello World #{i}")
+      {:ok, res_map} = Jason.decode(res.body)
+      if ["seq", "stream"] != res_map |> Map.keys() do
+        IO.inspect(res_map, label: "bad result from publishing")
+      end
     end
   end
 
@@ -16,14 +21,14 @@ defmodule NatsTestIex.QueueChecker do
 
   def received(id), do: GenServer.call(__MODULE__, {:received, id})
 
-  def set_state(max), do: GenServer.cast(__MODULE__, {:set_state, max})
+  def reset_state(min \\ 1), do: GenServer.cast(__MODULE__, {:reset_state, min})
 
   def init(_) do
     {:ok, %{min: 1, outstanding_updates: []}}
   end
 
-  def handle_cast({:set_state, max}, state) do
-    {:noreply, %{min: 1, outstanding_updates: []}}
+  def handle_cast({:reset_state, min}, state) do
+    {:noreply, %{min: min, outstanding_updates: []}}
   end
 
   def handle_call({:received, id}, _from, state) do

@@ -70,10 +70,10 @@ defmodule NatsTestIex do
   def create_stream_consumer do
     stream = %Stream{
       name: "HELLO",
-      subjects: ["greetings.*.*"],
+      subjects: ["greetings"],
       retention: :limits,
-      discard: :old,
-      max_bytes: 524_288_000
+      discard: :new,
+      max_bytes: 10_000_000
     }
 
     {:ok, _response} = Stream.create(:gnat, stream)
